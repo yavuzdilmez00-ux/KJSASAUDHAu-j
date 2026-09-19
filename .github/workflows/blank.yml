@@ -2,8 +2,8 @@ name: Dini Hikayeler Otomatik Tarama Botu
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # Her Pazar gece yarısı otomatik çalışır
-  workflow_dispatch: # GitHub üzerinden manuel olarak butona basıp çalıştırabilmen için
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
 
 jobs:
   scrape_and_update:
@@ -25,7 +25,7 @@ jobs:
 
     - name: Python Tarama Botunu Çalıştır (Scraping & JSON Split)
       run: |
-        python scripts/story_scraper_pipeline.py
+        python story_scraper_pipeline.py
 
     - name: Değişiklikleri GitHub'a Kaydet (Commit & Push)
       run: |
