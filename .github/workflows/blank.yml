@@ -1,0 +1,36 @@
+name: Dini Hikayeler Otomatik Tarama Botu
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Her Pazar gece yarısı otomatik çalışır
+  workflow_dispatch: # GitHub üzerinden manuel olarak butona basıp çalıştırabilmen için
+
+jobs:
+  scrape_and_update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Depoyu Klonla (Checkout)
+      uses: actions/checkout@v3
+
+    - name: Python Ortamını Kur
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Gerekli Kütüphaneleri Yükle (BeautifulSoup & Requests)
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
+
+    - name: Python Tarama Botunu Çalıştır (Scraping & JSON Split)
+      run: |
+        python scripts/story_scraper_pipeline.py
+
+    - name: Değişiklikleri GitHub'a Kaydet (Commit & Push)
+      run: |
+        git config --global user.name "Vera Story Bot"
+        git config --global user.email "bot@vera.app"
+        git add .
+        git commit -m "🤖 Otomatik Güncelleme: Yeni hikayeler tarandı ve JSON'lara bölündü" || echo "Değişiklik yok"
+        git push
