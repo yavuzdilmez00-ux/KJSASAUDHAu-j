@@ -5,39 +5,25 @@ from bs4 import BeautifulSoup
 
 # ==============================================================================
 # VERA APP - WEB SCRAPER VE OTOMATİK JSON BÖLÜCÜ
-# Bu bot internetteki kaynakları tarar, hikayeleri bulur, kategorilerine göre
-# ayırır ve her kategoriyi ayrı bir JSON dosyası olarak kaydeder.
-# En son da bu JSON'ları okuyup Android Kotlin dosyasına (ReligiousStoriesNewData.kt) gömer.
 # ==============================================================================
 
-JSON_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "json_data")
-KOTLIN_OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "../app/src/main/java/com/vera/app/ReligiousStoriesNewData.kt")
+# GitHub Actions projeyi çalıştırırken daima ana dizini (root) baz alır.
+# os.getcwd() kullanarak yolların her ortamda doğru çalışmasını sağlıyoruz.
+BASE_DIR = os.getcwd()
+
+JSON_OUTPUT_DIR = os.path.join(BASE_DIR, "json_data")
+# app klasörünün ana dizinde olduğunu varsayarak oluşturulan güvenli yol:
+KOTLIN_OUTPUT_PATH = os.path.join(BASE_DIR, "app/src/main/java/com/vera/app/ReligiousStoriesNewData.kt")
 
 def scrape_stories_from_web():
-    """
-    İNTERNETTEN HİKAYE ÇEKME FONKSİYONU (SCRAPER)
-    Buraya hedef sitenin linkini ve HTML yapılarını (div class vb.) gireceksin.
-    Şu an GitHub'da hata vermemesi için gerçek bir siteyi hackliyormuş gibi yapmıyoruz,
-    güvenli simülasyon verisi üretiyoruz. Gerçek site taramak için 'requests.get(URL)' kullanacaksın.
-    """
     print("🌐 İnternetteki kaynaklar taranıyor (Web Scraping başlatıldı)...")
 
-    # GERÇEK SCRAPING İÇİN ÖRNEK KOD:
-    # url = "https://ornek-dini-hikayeler-sitesi.com"
-    # response = requests.get(url)
-    # soup = BeautifulSoup(response.content, 'html.parser')
-    # for article in soup.find_all('div', class_='hikaye-karti'):
-    #     title = article.find('h2').text
-    #     ...
-
-    # Taranmış ve ayrıştırılmış verilerin tutulacağı sözlük (Dictionary)
     scraped_data = {
         "Peygamberler_Tarihi": {
             "name": "Peygamberler Tarihi (A.S.)",
             "description": "Kur'an'da adı geçen peygamberlerin ibretlik kıssaları.",
             "stories": [
                 {"title": "Hz. İbrahim ve Ateş", "content": "Nemrut onu ateşe attı...", "moral": "Tevekkül edeni Allah korur."}
-                # Yüzlerce hikaye buraya eklenebilir
             ]
         },
         "Asri_Saadet": {
@@ -58,16 +44,12 @@ def scrape_stories_from_web():
     return scraped_data
 
 def save_to_separate_jsons(scraped_data):
-    """
-    Çekilen verileri Kategorilerine Göre AYRI AYRI JSON DOSYALARINA böler.
-    """
     print("📂 Veriler kategorilerine göre ayrı JSON dosyalarına bölünüyor...")
 
     if not os.path.exists(JSON_OUTPUT_DIR):
         os.makedirs(JSON_OUTPUT_DIR)
 
     for category_key, category_data in scraped_data.items():
-        # Dosya adı: Peygamberler_Tarihi.json vb.
         file_path = os.path.join(JSON_OUTPUT_DIR, f"{category_key}.json")
 
         with open(file_path, "w", encoding="utf-8") as f:
@@ -80,17 +62,15 @@ def escape_kotlin_string(text):
     return text.replace('"', '\\"').replace('\n', '\\n')
 
 def generate_kotlin_from_jsons():
-    """
-    json_data klasöründeki TÜM JSON dosyalarını okur ve
-    tek bir Kotlin dosyası haline getirip Android projesine yazar.
-    """
     print("⚙️ JSON'lar okunup Android (Kotlin) koduna dönüştürülüyor...")
+
+    # Eğer Kotlin dosyasının klasör yolu yoksa, önce o klasörleri oluştur (Hata almamak için)
+    os.makedirs(os.path.dirname(KOTLIN_OUTPUT_PATH), exist_ok=True)
 
     kotlin_code = "package com.vera.app\n\n"
     kotlin_code += "data class StoryCategory(\n    val name: String,\n    val description: String,\n    val stories: List<ReligiousStory>\n)\n\n"
     kotlin_code += "object ReligiousStoriesNewArchive {\n    val categories = listOf(\n"
 
-    # JSON klasöründeki tüm dosyaları bul
     json_files = [f for f in os.listdir(JSON_OUTPUT_DIR) if f.endswith('.json')]
 
     for i, file_name in enumerate(json_files):
@@ -126,13 +106,8 @@ def generate_kotlin_from_jsons():
     print(f"🚀 Başarılı! Kotlin dosyası güncellendi: {KOTLIN_OUTPUT_PATH}")
 
 def main():
-    # 1. Bot internete çıkar ve siteleri tarar (Scraping)
     raw_data = scrape_stories_from_web()
-
-    # 2. Taranan devasa veriyi kategori bazlı JSON'lara böler ve kaydeder
     save_to_separate_jsons(raw_data)
-
-    # 3. Tüm JSON dosyalarını toparlayıp uygulamanın kodunu günceller
     generate_kotlin_from_jsons()
 
 if __name__ == "__main__":
