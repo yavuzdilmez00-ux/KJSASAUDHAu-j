@@ -24,7 +24,7 @@ jobs:
     - name: Gerekli Kütüphaneleri Yükle
       run: |
         python -m pip install --upgrade pip
-        pip install requests beautifulsoup4 ddgs trafilatura
+        pip install requests beautifulsoup4 trafilatura
 
     - name: Akıllı Botu Çalıştır
       run: python hikaye_cekici.py
@@ -34,5 +34,5 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
         git add .
-        git commit -m "bot: İnternetten yeni hikayeler araştırıldı ve eklendi" || echo "Yeni eklenecek bir hikaye bulunamadı."
+        git commit -m "bot: Örümcek ağından yeni hikayeler toplandı" || echo "Yeni eklenecek bir hikaye bulunamadı."
         git push
