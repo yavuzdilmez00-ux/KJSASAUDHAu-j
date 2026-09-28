@@ -1,5 +1,7 @@
 import os
+import sys
 import json
+import time
 import random
 from duckduckgo_search import DDGS
 
@@ -25,30 +27,47 @@ Sen bir İslam alimi ve edipisin. İslam'a, Kuran'a ve Sünnete tam uygun olacak
 ]
 """
 
+dosya_adi = "dualar.json"
+
+# Eğer dosya hiç yoksa, Git'in çökmemesi için boş bir liste oluştur
+if not os.path.exists(dosya_adi):
+    with open(dosya_adi, "w", encoding="utf-8") as f:
+        json.dump([], f)
+
 try:
     print("Yapay zekaya bağlanılıyor (API gerektirmez)...")
-    # DuckDuckGo'nun ücretsiz AI chat fonksiyonunu kullanıyoruz
-    ciktı = DDGS().chat(prompt, model="gpt-4o-mini") 
     
-    # Gelen yanıtı temizle (Markdown kod blokları varsa kaldır)
+    # Sunucu anlık hata verebilir diye 3 kez tekrar deneme (retry) sistemi kuruyoruz
+    ciktı = ""
+    for deneme in range(3):
+        try:
+            ciktı = DDGS().chat(prompt, model="gpt-4o-mini")
+            if ciktı:
+                break
+        except Exception as e:
+            print(f"{deneme + 1}. deneme başarısız oldu: {e}")
+            time.sleep(5) # 5 saniye bekleyip tekrar dene
+            
+    if not ciktı:
+        print("Yapay zeka sunucusundan yanıt alınamadı. İşlem iptal ediliyor.")
+        sys.exit(0) # Hata vermeden sessizce durdur ki Git çökmesin
+
+    # Gelen yanıtı temizle
     ciktı = ciktı.strip()
     if ciktı.startswith("```json"):
         ciktı = ciktı[7:-3].strip()
     elif ciktı.startswith("```"):
         ciktı = ciktı[3:-3].strip()
 
-    # JSON verisini dönüştür
     yeni_dualar = json.loads(ciktı)
-    dosya_adi = "dualar.json"
     mevcut_dualar = []
 
-    # Eski duaları oku (varsa)
-    if os.path.exists(dosya_adi):
-        with open(dosya_adi, "r", encoding="utf-8") as f:
-            try:
-                mevcut_dualar = json.load(f)
-            except json.JSONDecodeError:
-                mevcut_dualar = []
+    # Eski duaları oku
+    with open(dosya_adi, "r", encoding="utf-8") as f:
+        try:
+            mevcut_dualar = json.load(f)
+        except json.JSONDecodeError:
+            mevcut_dualar = []
 
     # Yeni duaları mevcut listeye ekle
     mevcut_dualar.extend(yeni_dualar)
@@ -60,4 +79,5 @@ try:
     print(f"Başarılı! '{secilen_konu}' konusunda {len(yeni_dualar)} dua eklendi. Toplam dua sayısı: {len(mevcut_dualar)}")
 
 except Exception as e:
-    print(f"Bir hata oluştu: {e}")
+    print(f"Kritik bir hata oluştu: {e}")
+    sys.exit(0)
