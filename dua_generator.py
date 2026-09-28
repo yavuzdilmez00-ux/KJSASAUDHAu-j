@@ -1,5 +1,6 @@
 import json
 import itertools
+import os
 from datetime import datetime
 
 # 1. DOĞAL VE İÇTEN GİRİŞLER
@@ -82,40 +83,39 @@ kapanislar = [
     "Şüphesiz senin her şeye gücün yeter."
 ]
 
-def kategorili_dualari_uret():
-    json_verisi = {
-        "olusturulma_tarihi": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "toplam_dua_sayisi": 0,
-        "kategoriler": {}
-    }
+def kategorileri_ayri_dosyalara_yaz():
+    # 1. Ana klasörü oluştur (varsa hata vermez)
+    klasor_adi = "dualar_klasoru"
+    os.makedirs(klasor_adi, exist_ok=True)
+
+    print("Dualar üretiliyor ve dosyalara ayrılıyor...")
     
-    genel_id_sayaci = 1
-    
-    # Her kategori için ayrı ayrı kombinasyon oluşturuyoruz
+    # 2. Her kategori için döngü başlat
     for kategori_adi, kategori_istekleri in istek_kategorileri.items():
-        json_verisi["kategoriler"][kategori_adi] = []
-        
-        # O kategoriye ait isteklerle kombinasyon yapıyoruz
+        # Sadece o kategoriye ait kombinasyonları hesapla
         kombinasyonlar = list(itertools.product(hitaplar, ovguler, kategori_istekleri, korunmalar, kapanislar))
         
-        for (hitap, ovgu, istek, korunma, kapanis) in kombinasyonlar:
+        kategori_verisi = {
+            "olusturulma_tarihi": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "kategori_adi": kategori_adi,
+            "toplam_dua_sayisi": len(kombinasyonlar),
+            "dualar": []
+        }
+        
+        for index, (hitap, ovgu, istek, korunma, kapanis) in enumerate(kombinasyonlar, start=1):
             dua_metni = f"{hitap} {ovgu} {istek}, {korunma}. {kapanis}"
-            
-            json_verisi["kategoriler"][kategori_adi].append({
-                "id": genel_id_sayaci,
+            kategori_verisi["dualar"].append({
+                "id": index,
                 "dua": dua_metni
             })
-            genel_id_sayaci += 1
-
-    json_verisi["toplam_dua_sayisi"] = genel_id_sayaci - 1
-    return json_verisi
+        
+        # 3. O kategoriye ait JSON dosyasını oluştur ve klasörün içine kaydet
+        dosya_yolu = os.path.join(klasor_adi, f"{kategori_adi}.json")
+        with open(dosya_yolu, "w", encoding="utf-8") as json_dosyasi:
+            json.dump(kategori_verisi, json_dosyasi, ensure_ascii=False, indent=4)
+            
+        print(f" -> {dosya_yolu} başarıyla oluşturuldu ({len(kombinasyonlar)} dua).")
 
 if __name__ == "__main__":
-    dualar_sozlugu = kategorili_dualari_uret()
-    
-    # Eskisini tamamen silip yeni JSON dosyasına yaz
-    dosya_adi = "dualar.json"
-    with open(dosya_adi, "w", encoding="utf-8") as json_dosyasi:
-        json.dump(dualar_sozlugu, json_dosyasi, ensure_ascii=False, indent=4)
-        
-    print(f"Başarılı! Toplam {dualar_sozlugu['toplam_dua_sayisi']} adet dua KATEGORİLERİNE AYRILARAK {dosya_adi} dosyasına kaydedildi.")
+    kategorileri_ayri_dosyalara_yaz()
+    print("Tüm işlemler tamamlandı!")
