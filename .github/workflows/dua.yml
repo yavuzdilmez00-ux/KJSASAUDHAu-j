@@ -1,8 +1,8 @@
-name: Otomatik Dua Jeneratörü
+name: Otomatik Dua Jeneratörü (Ücretsiz Sürüm)
 
 on:
   schedule:
-    - cron: '0 */4 * * *' # Her 4 saatte bir otomatik çalışır (Günde 6 kez)
+    - cron: '0 */4 * * *' # Her 4 saatte bir otomatik çalışır
   workflow_dispatch: # GitHub üzerinden manuel tetikleme butonu
 
 permissions:
@@ -15,18 +15,16 @@ jobs:
       - name: Repoyu Klonla
         uses: actions/checkout@v4
 
-      - name: Python 3.10 Kurulumu
+      - name: Python 3.11 Kurulumu
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11' # Sürüm hatasını gidermek için 3.11'e yükseltildi
 
       - name: Gerekli Kütüphaneleri Yükle
         run: |
-          pip install google-generativeai
+          pip install duckduckgo-search
 
       - name: Dua Üreticiyi Çalıştır
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python dua_generator.py
 
       - name: Değişiklikleri Kaydet (Commit & Push)
