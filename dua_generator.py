@@ -3,7 +3,7 @@ import sys
 import json
 import time
 import random
-import g4f
+import urllib.request
 
 # Duaların üretileceği kategoriler
 konular = [
@@ -14,10 +14,9 @@ konular = [
 ]
 secilen_konu = random.choice(konular)
 
-# Yapay zekaya verilecek kesin komut
 prompt = f"""
-Sen bir İslam alimi ve edipisin. İslam'a, Kuran'a ve Sünnete tam uygun olacak şekilde "{secilen_konu}" konusunda 10 adet farklı, içten, samimi ve Türkçe dua yaz.
-Çıktı SADECE aşağıdaki formatta bir JSON dizisi (array) olmalıdır. Başka hiçbir açıklama, giriş veya sonuç cümlesi yazma. Sadece JSON kodunu ver.
+İslam'a, Kuran'a ve Sünnete tam uygun olacak şekilde "{secilen_konu}" konusunda 10 adet farklı, içten ve Türkçe dua yaz.
+Çıktı SADECE aşağıdaki formatta bir JSON dizisi (array) olmalıdır. Başka hiçbir metin, giriş veya sonuç cümlesi yazma:
 
 [
   {{
@@ -29,35 +28,41 @@ Sen bir İslam alimi ve edipisin. İslam'a, Kuran'a ve Sünnete tam uygun olacak
 
 dosya_adi = "dualar.json"
 
-# Eğer dosya hiç yoksa, Git'in çökmemesi için boş bir liste oluştur
+# Dosya yoksa oluştur (Git çökmesini engeller)
 if not os.path.exists(dosya_adi):
     with open(dosya_adi, "w", encoding="utf-8") as f:
         json.dump([], f)
 
 try:
-    print("Yapay zekaya bağlanılıyor (g4f üzerinden - API gerektirmez)...")
+    print("Yapay zekaya bağlanılıyor (API Key ve Tarayıcı gerektirmez)...")
     
+    # Tamamen ücretsiz, açık ve şifresiz metin AI ağını kullanıyoruz
+    url = "https://text.pollinations.ai/"
+    payload = json.dumps({
+        "messages": [
+            {"role": "system", "content": "Sen bir İslam alimi ve edipisin. Çıktıların SADECE geçerli bir JSON formatında olmalıdır."},
+            {"role": "user", "content": prompt}
+        ],
+        "jsonMode": True
+    }).encode("utf-8")
+
+    headers = {'Content-Type': 'application/json'}
+    req = urllib.request.Request(url, data=payload, headers=headers)
+
     ciktı = ""
-    # Sunucu hatasına karşı 3 kez deneme şansı
     for deneme in range(3):
         try:
-            # g4f ile birden fazla ücretsiz altyapı otomatik taranır
-            response = g4f.ChatCompletion.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                timeout=30 # 30 saniye bekler, yanıt gelmezse diğer denemeye geçer
-            )
-            
-            if response:
-                ciktı = response
-                break
+            with urllib.request.urlopen(req, timeout=30) as response:
+                ciktı = response.read().decode('utf-8')
+                if ciktı:
+                    break
         except Exception as e:
             print(f"{deneme + 1}. deneme başarısız oldu: {e}")
             time.sleep(5)
             
     if not ciktı:
-        print("Yapay zeka sunucusundan yanıt alınamadı. İşlem bir sonraki döngüye erteleniyor.")
-        sys.exit(0) # Repo çökmesin diye işlemi sessizce durdurur
+        print("Yapay zeka sunucusundan yanıt alınamadı. İşlem sessizce atlanıyor.")
+        sys.exit(0)
 
     # Gelen yanıtı JSON formatına temizle
     ciktı = ciktı.strip()
@@ -66,8 +71,11 @@ try:
     elif ciktı.startswith("```"):
         ciktı = ciktı[3:-3].strip()
 
-    yeni_dualar = json.loads(ciktı)
-    mevcut_dualar = []
+    try:
+        yeni_dualar = json.loads(ciktı)
+    except json.JSONDecodeError:
+        print("Gelen yanıt geçerli bir JSON değil. İşlem sessizce atlanıyor.")
+        sys.exit(0)
 
     # Eski duaları oku
     with open(dosya_adi, "r", encoding="utf-8") as f:
@@ -86,5 +94,5 @@ try:
     print(f"Başarılı! '{secilen_konu}' konusunda {len(yeni_dualar)} dua eklendi. Toplam dua sayısı: {len(mevcut_dualar)}")
 
 except Exception as e:
-    print(f"Kritik bir hata oluştu (JSON formatı bozuk olabilir): {e}")
+    print(f"Kritik bir hata oluştu: {e}")
     sys.exit(0)
