@@ -1,0 +1,38 @@
+name: Otomatik Dua Jeneratörü
+
+on:
+  schedule:
+    - cron: '0 */4 * * *' # Her 4 saatte bir otomatik çalışır (Günde 6 kez)
+  workflow_dispatch: # GitHub üzerinden manuel tetikleme butonu
+
+permissions:
+  contents: write # Repoya dosya yazdırma izni
+
+jobs:
+  generate-and-save:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu Klonla
+        uses: actions/checkout@v4
+
+      - name: Python 3.10 Kurulumu
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Gerekli Kütüphaneleri Yükle
+        run: |
+          pip install google-generativeai
+
+      - name: Dua Üreticiyi Çalıştır
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python dua_generator.py
+
+      - name: Değişiklikleri Kaydet (Commit & Push)
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add dualar.json
+          git commit -m "🤖 Otomatik Dua Eklemesi: Veritabanı güncellendi" || echo "Değişiklik yok"
+          git push
