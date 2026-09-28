@@ -1,46 +1,46 @@
-import yaml
+import json
 import random
 from datetime import datetime
 
-DOSYA_YOLU = 'dualar.yml'
+# Yüz binlerce kombinasyon üretecek kelime havuzu
+hitaplar = [
+    "Allah'ım!", "Ya Rabbi!", "Ey Rabbimiz!", "Ya Rahman!", "Ya Şafi!", 
+    "Ya Rezzak!", "Ya Fettah!", "Ey Alemlerin Rabbi!"
+]
+istekler = [
+    "bize hidayet nasip eyle", "kalbimizi dinin üzere sabit kıl", "bize dünyada ve ahirette iyilik ver",
+    "bize helal ve bol rızık ihsan eyle", "hastalıklarımıza şifa ver", "bizi salih kullarının arasına kat",
+    "ilmimizi ve anlayışımızı artır", "bize sabır ve metanet ver"
+]
+korunmalar = [
+    "bizi cehennem azabından koru", "bizi kabir azabından muhafaza eyle", "bizi şeytanın vesveselerinden koru",
+    "bizi görünmez kazalardan ve belalardan esirge", "bizi kötü ahlaktan ve hastalıklardan muhafaza et",
+    "bizi zalimlerin şerrinden ve haksızlıklardan koru"
+]
+kapanislar = [
+    "Amin.", "Şüphesiz sen duaları hakkıyla işitensin.", 
+    "Sen merhametlilerin en merhametlisisin.", "Dualarımızı dergâh-ı izzetinde kabul eyle."
+]
 
 def ana_islem():
-    # 1. Dosyayı Oku
-    try:
-        with open(DOSYA_YOLU, 'r', encoding='utf-8') as f:
-            veri = yaml.safe_load(f) or {}
-    except FileNotFoundError:
-        veri = {'dualar': {'genel': ["Allah'ım bize merhamet et."]}}
+    # 1. Kelimeleri birleştirerek yepyeni, özgün bir dua üret
+    dua = f"{random.choice(hitaplar)} {random.choice(istekler)}, {random.choice(korunmalar)}. {random.choice(kapanislar)}"
+    
+    print(f"Günün Duası: {dua}")
 
-    # 2. Rastgele bir dua seç
-    dualar = veri.get('dualar', {})
-    tum_dualar = []
-    for kategori, dua_listesi in dualar.items():
-        if isinstance(dua_listesi, list):
-            tum_dualar.extend(dua_listesi)
-            
-    if not tum_dualar:
-        print("Okunacak dua bulunamadı.")
-        return
-
-    secilen_dua = random.choice(tum_dualar)
-    print(f"Günün Duası: {secilen_dua}")
-
-    # 3. YAZMA İŞLEMİ: Dosyayı güncelle (GitHub'a pushlanacak kısım)
+    # 2. JSON formatında kaydedilecek veriyi hazırla
     simdi = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # meta verilerini güncelle
-    if 'meta' not in veri:
-        veri['meta'] = {}
-    
-    veri['meta']['son_calisma_tarihi'] = simdi
-    veri['meta']['son_okunan_dua'] = secilen_dua
+    kayit = {
+        "son_guncelleme": simdi,
+        "gunun_duasi": dua
+    }
 
-    # 4. Dosyaya geri yaz (allow_unicode=True Türkçe karakterleri bozmamak için önemli)
-    with open(DOSYA_YOLU, 'w', encoding='utf-8') as f:
-        yaml.dump(veri, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    # 3. JSON dosyasına yaz (ensure_ascii=False Türkçe karakterlerin düzgün görünmesini sağlar)
+    with open('dualar.json', 'w', encoding='utf-8') as f:
+        json.dump(kayit, f, ensure_ascii=False, indent=4)
         
-    print("dualar.yml başarıyla güncellendi ve kaydedildi.")
+    print("Yeni dua üretildi ve dualar.json dosyasına başarıyla kaydedildi.")
 
 if __name__ == "__main__":
     ana_islem()
