@@ -1,12 +1,12 @@
-name: İslami Hikayeleri Topla ve Güncelle
+name: İslami Hikayeleri Topla ve Kategorile
 
 on:
   schedule:
     - cron: '0 12 * * 5' # Her Cuma saat 12:00'de otomatik çalışır
-  workflow_dispatch: # İstediğin zaman manuel tetikleyebilmen için buton ekler
+  workflow_dispatch: # Manuel tetikleme butonu
 
 permissions:
-  contents: write # Depoya yazma (commit/push) izni
+  contents: write
 
 jobs:
   scrape-and-commit:
@@ -26,14 +26,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests beautifulsoup4
 
-    - name: Hikaye Çekici Scripti Çalıştır
+    - name: Hikaye Botunu Çalıştır
       run: python hikaye_cekici.py
 
     - name: Değişiklikleri Depoya Yaz (Commit & Push)
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
-        git add hikayeler.json
-        # Eğer yeni veri yoksa hata vermemesi için || echo kullanıyoruz
-        git commit -m "feat: Yeni yaşanmış İslami hikayeler eklendi" || echo "Değişiklik bulunamadı"
+        
+        # Tüm klasörü ve içindeki JSON dosyalarını ekle
+        git add .
+        
+        git commit -m "feat: Yeni tarihi ve İslami hikayeler kategorilenerek eklendi" || echo "Yeni eklenecek bir hikaye bulunamadı."
         git push
