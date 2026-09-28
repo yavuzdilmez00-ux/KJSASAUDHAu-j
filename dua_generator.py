@@ -2,7 +2,7 @@ import json
 import itertools
 from datetime import datetime
 
-# 1. DOĞAL VE İÇTEN GİRİŞLER (Eski isimler tamamen kaldırıldı)
+# 1. DOĞAL VE İÇTEN GİRİŞLER
 hitaplar = [
     "Allah'ım!", "Rabbim!", "Ya Rabbi!", "Ey Yüce Rabbimiz!", 
     "Yüce Allah'ım!", "Ey merhameti sonsuz olan Rabbim!", 
@@ -25,19 +25,39 @@ ovguler = [
     "Kusurlarımızı ve eksiklerimizi yalnız sen tamamlarsın,"
 ]
 
-# 3. İSTEKLER VE LÜTUFLAR
-istekler = [
-    "kalbimizi iman nuruyla doldur", "hakkı hak bilip ona uymayı bize nasip et", 
-    "hanemize huzur, ömrümüze bereket ihsan eyle", "bize helal ve temiz rızıklar kapısı aç", 
-    "bedenimize sıhhat, ruhumuza afiyet ver", "bizi rızana ulaştıracak güzel ahlak ile rızıklandır",
-    "ilmimizi, anlayışımızı ve sana olan sevgimizi artır", "bize her işimizde kolaylıklar sağla", 
-    "ailemizi ve sevdiklerimizi birbirine kenetle", "bize dünyada da ahirette de iyilik ve güzellikler ver", 
-    "son nefesimizde kelime-i şehadet getirmeyi nasip eyle", "bizi sana layık bir kul, Peygamberimize layık bir ümmet eyle",
-    "göğsümüze inşirah ver ve içimizi ferahlat", "bize şükreden bir kalp ve zikreden bir dil bahşet",
-    "karşılaştığımız zorluklarda bize sabır ve metanet ver", "bizi doğru yoldan, sırât-ı müstakîmden ayırma",
-    "işlerimizi hayırla sonuçlandır", "dualarımızı katında makbul olan dualardan eyle",
-    "bize dert verip derman aratma", "bizi sevdiklerimizin acısıyla imtihan etme"
-]
+# 3. İSTEKLER VE LÜTUFLAR (KATEGORİLERE AYRILMIŞ HALDE)
+istek_kategorileri = {
+    "Iman_ve_Hidayet_Dualari": [
+        "kalbimizi iman nuruyla doldur", 
+        "hakkı hak bilip ona uymayı bize nasip et",
+        "bizi rızana ulaştıracak güzel ahlak ile rızıklandır",
+        "son nefesimizde kelime-i şehadet getirmeyi nasip eyle",
+        "bizi sana layık bir kul, Peygamberimize layık bir ümmet eyle",
+        "bizi doğru yoldan, sırât-ı müstakîmden ayırma"
+    ],
+    "Aile_ve_Huzur_Dualari": [
+        "hanemize huzur, ömrümüze bereket ihsan eyle",
+        "ailemizi ve sevdiklerimizi birbirine kenetle",
+        "göğsümüze inşirah ver ve içimizi ferahlat",
+        "bizi sevdiklerimizin acısıyla imtihan etme"
+    ],
+    "Rizik_ve_Is_Dualari": [
+        "bize helal ve temiz rızıklar kapısı aç",
+        "bize her işimizde kolaylıklar sağla",
+        "işlerimizi hayırla sonuçlandır"
+    ],
+    "Sifa_ve_Afiyet_Dualari": [
+        "bedenimize sıhhat, ruhumuza afiyet ver",
+        "bize dert verip derman aratma"
+    ],
+    "Genel_Yenilenme_ve_Sabir_Dualari": [
+        "ilmimizi, anlayışımızı ve sana olan sevgimizi artır",
+        "bize dünyada da ahirette de iyilik ve güzellikler ver",
+        "bize şükreden bir kalp ve zikreden bir dil bahşet",
+        "karşılaştığımız zorluklarda bize sabır ve metanet ver",
+        "dualarımızı katında makbul olan dualardan eyle"
+    ]
+}
 
 # 4. KORUNMA VE SIĞINMA
 korunmalar = [
@@ -62,32 +82,40 @@ kapanislar = [
     "Şüphesiz senin her şeye gücün yeter."
 ]
 
-def tum_duallari_uret():
-    # Tüm olasılıkları hesapla (8 x 12 x 20 x 20 x 9 = tam 345.600 dua)
-    tum_kombinasyonlar = list(itertools.product(hitaplar, ovguler, istekler, korunmalar, kapanislar))
-    
+def kategorili_dualari_uret():
     json_verisi = {
         "olusturulma_tarihi": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "toplam_dua_sayisi": len(tum_kombinasyonlar),
-        "dualar": []
+        "toplam_dua_sayisi": 0,
+        "kategoriler": {}
     }
     
-    # 345.600 duanın tamamını JSON listesine ekle
-    for index, (hitap, ovgu, istek, korunma, kapanis) in enumerate(tum_kombinasyonlar, start=1):
-        dua_metni = f"{hitap} {ovgu} {istek}, {korunma}. {kapanis}"
-        json_verisi["dualar"].append({
-            "id": index,
-            "dua": dua_metni
-        })
+    genel_id_sayaci = 1
+    
+    # Her kategori için ayrı ayrı kombinasyon oluşturuyoruz
+    for kategori_adi, kategori_istekleri in istek_kategorileri.items():
+        json_verisi["kategoriler"][kategori_adi] = []
         
+        # O kategoriye ait isteklerle kombinasyon yapıyoruz
+        kombinasyonlar = list(itertools.product(hitaplar, ovguler, kategori_istekleri, korunmalar, kapanislar))
+        
+        for (hitap, ovgu, istek, korunma, kapanis) in kombinasyonlar:
+            dua_metni = f"{hitap} {ovgu} {istek}, {korunma}. {kapanis}"
+            
+            json_verisi["kategoriler"][kategori_adi].append({
+                "id": genel_id_sayaci,
+                "dua": dua_metni
+            })
+            genel_id_sayaci += 1
+
+    json_verisi["toplam_dua_sayisi"] = genel_id_sayaci - 1
     return json_verisi
 
 if __name__ == "__main__":
-    dualar_sozlugu = tum_duallari_uret()
+    dualar_sozlugu = kategorili_dualari_uret()
     
     # Eskisini tamamen silip yeni JSON dosyasına yaz
     dosya_adi = "dualar.json"
     with open(dosya_adi, "w", encoding="utf-8") as json_dosyasi:
         json.dump(dualar_sozlugu, json_dosyasi, ensure_ascii=False, indent=4)
         
-    print(f"Başarılı! Eskiler silindi. Toplam {len(dualar_sozlugu['dualar'])} adet doğal dua {dosya_adi} dosyasına kaydedildi.")
+    print(f"Başarılı! Toplam {dualar_sozlugu['toplam_dua_sayisi']} adet dua KATEGORİLERİNE AYRILARAK {dosya_adi} dosyasına kaydedildi.")
