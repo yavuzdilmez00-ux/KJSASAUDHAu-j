@@ -1,6 +1,7 @@
 import json
 import itertools
 import os
+import random
 from datetime import datetime
 
 # 1. DOĞAL VE İÇTEN GİRİŞLER
@@ -84,38 +85,41 @@ kapanislar = [
 ]
 
 def kategorileri_ayri_dosyalara_yaz():
-    # 1. Ana klasörü oluştur (varsa hata vermez)
     klasor_adi = "dualar_klasoru"
     os.makedirs(klasor_adi, exist_ok=True)
 
-    print("Dualar üretiliyor ve dosyalara ayrılıyor...")
+    print("Dualar üretiliyor, tamamen karıştırılıyor ve dosyalara ayrılıyor...")
     
-    # 2. Her kategori için döngü başlat
     for kategori_adi, kategori_istekleri in istek_kategorileri.items():
-        # Sadece o kategoriye ait kombinasyonları hesapla
+        # 1. Kombinasyonları oluştur
         kombinasyonlar = list(itertools.product(hitaplar, ovguler, kategori_istekleri, korunmalar, kapanislar))
+        
+        # 2. LİSTEYİ TAMAMEN KARIŞTIR (Alt alta aynı cümlelerin gelmesini engeller)
+        random.shuffle(kombinasyonlar)
+        
+        # 3. Her kategoriden tam 20.000 tane seç (5 kategori x 20.000 = Toplam 100.000 dua)
+        secilen_dualar = kombinasyonlar[:20000]
         
         kategori_verisi = {
             "olusturulma_tarihi": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "kategori_adi": kategori_adi,
-            "toplam_dua_sayisi": len(kombinasyonlar),
+            "toplam_dua_sayisi": len(secilen_dualar),
             "dualar": []
         }
         
-        for index, (hitap, ovgu, istek, korunma, kapanis) in enumerate(kombinasyonlar, start=1):
+        for index, (hitap, ovgu, istek, korunma, kapanis) in enumerate(secilen_dualar, start=1):
             dua_metni = f"{hitap} {ovgu} {istek}, {korunma}. {kapanis}"
             kategori_verisi["dualar"].append({
                 "id": index,
                 "dua": dua_metni
             })
         
-        # 3. O kategoriye ait JSON dosyasını oluştur ve klasörün içine kaydet
         dosya_yolu = os.path.join(klasor_adi, f"{kategori_adi}.json")
         with open(dosya_yolu, "w", encoding="utf-8") as json_dosyasi:
             json.dump(kategori_verisi, json_dosyasi, ensure_ascii=False, indent=4)
             
-        print(f" -> {dosya_yolu} başarıyla oluşturuldu ({len(kombinasyonlar)} dua).")
+        print(f" -> {dosya_yolu} başarıyla oluşturuldu ({len(secilen_dualar)} dua).")
 
 if __name__ == "__main__":
     kategorileri_ayri_dosyalara_yaz()
-    print("Tüm işlemler tamamlandı!")
+    print("Tüm işlemler tamamlandı! Toplam 100.000 dua üretildi.")
