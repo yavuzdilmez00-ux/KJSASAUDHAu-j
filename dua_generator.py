@@ -3,7 +3,7 @@ import sys
 import json
 import time
 import random
-from duckduckgo_search import DDGS
+import g4f
 
 # Duaların üretileceği kategoriler
 konular = [
@@ -35,24 +35,31 @@ if not os.path.exists(dosya_adi):
         json.dump([], f)
 
 try:
-    print("Yapay zekaya bağlanılıyor (API gerektirmez)...")
+    print("Yapay zekaya bağlanılıyor (g4f üzerinden - API gerektirmez)...")
     
-    # Sunucu anlık hata verebilir diye 3 kez tekrar deneme (retry) sistemi kuruyoruz
     ciktı = ""
+    # Sunucu hatasına karşı 3 kez deneme şansı
     for deneme in range(3):
         try:
-            ciktı = DDGS().chat(prompt, model="gpt-4o-mini")
-            if ciktı:
+            # g4f ile birden fazla ücretsiz altyapı otomatik taranır
+            response = g4f.ChatCompletion.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                timeout=30 # 30 saniye bekler, yanıt gelmezse diğer denemeye geçer
+            )
+            
+            if response:
+                ciktı = response
                 break
         except Exception as e:
             print(f"{deneme + 1}. deneme başarısız oldu: {e}")
-            time.sleep(5) # 5 saniye bekleyip tekrar dene
+            time.sleep(5)
             
     if not ciktı:
-        print("Yapay zeka sunucusundan yanıt alınamadı. İşlem iptal ediliyor.")
-        sys.exit(0) # Hata vermeden sessizce durdur ki Git çökmesin
+        print("Yapay zeka sunucusundan yanıt alınamadı. İşlem bir sonraki döngüye erteleniyor.")
+        sys.exit(0) # Repo çökmesin diye işlemi sessizce durdurur
 
-    # Gelen yanıtı temizle
+    # Gelen yanıtı JSON formatına temizle
     ciktı = ciktı.strip()
     if ciktı.startswith("```json"):
         ciktı = ciktı[7:-3].strip()
@@ -79,5 +86,5 @@ try:
     print(f"Başarılı! '{secilen_konu}' konusunda {len(yeni_dualar)} dua eklendi. Toplam dua sayısı: {len(mevcut_dualar)}")
 
 except Exception as e:
-    print(f"Kritik bir hata oluştu: {e}")
+    print(f"Kritik bir hata oluştu (JSON formatı bozuk olabilir): {e}")
     sys.exit(0)
