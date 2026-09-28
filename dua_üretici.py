@@ -1,4 +1,4 @@
-import yaml
+import json
 import random
 from datetime import datetime
 
@@ -23,12 +23,12 @@ kapanislar = [
 ]
 
 def ana_islem():
-    # 1. Kelimeleri birleştirerek anında yepyeni, özgün bir dua üret
+    # 1. Kelimeleri birleştirerek yepyeni, özgün bir dua üret
     dua = f"{random.choice(hitaplar)} {random.choice(istekler)}, {random.choice(korunmalar)}. {random.choice(kapanislar)}"
     
     print(f"Günün Duası: {dua}")
 
-    # 2. Üretilen duayı GitHub'a kaydetmek için YML verisi hazırla
+    # 2. JSON formatında kaydedilecek veriyi hazırla
     simdi = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     kayit = {
@@ -36,11 +36,11 @@ def ana_islem():
         "gunun_duasi": dua
     }
 
-    # 3. YML dosyasının üzerine yaz (Actions bunu GitHub'a pushlayacak)
-    with open('dualar.yml', 'w', encoding='utf-8') as f:
-        yaml.dump(kayit, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    # 3. JSON dosyasına yaz (ensure_ascii=False Türkçe karakterlerin düzgün görünmesini sağlar)
+    with open('dualar.json', 'w', encoding='utf-8') as f:
+        json.dump(kayit, f, ensure_ascii=False, indent=4)
         
-    print("Yeni dua üretildi ve dualar.yml dosyasına başarıyla kaydedildi.")
+    print("Yeni dua üretildi ve dualar.json dosyasına başarıyla kaydedildi.")
 
 if __name__ == "__main__":
     ana_islem()
