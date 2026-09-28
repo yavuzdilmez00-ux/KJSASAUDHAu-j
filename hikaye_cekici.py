@@ -2,91 +2,108 @@ import os
 import json
 import time
 import random
-from ddgs import DDGS
+import requests
+from bs4 import BeautifulSoup
 import trafilatura
+from urllib.parse import urljoin, urlparse
 
 ANA_KLASOR = "Hikayeler_Arsivi"
 
-# Botun internette yapacağı aramalar ve bunları kaydedeceği klasör (kategori) isimleri
-ARAMA_TERIMLERI = {
-    "Asr-i_Saadet_ve_Sahabe": [
-        "sahabe hayatından ibretlik hikayeler", 
-        "peygamberimizin hayatından kıssalar"
-    ],
-    "Evliyalar_ve_Alimler": [
-        "evliya hikayeleri yaşanmış", 
-        "büyük islam alimlerinin ibretlik anıları"
-    ],
-    "Genel_Islami_Kissalar": [
-        "yaşanmış dini hikayeler", 
-        "ibretlik islami hikayeler uzun"
-    ]
-}
+# Botun dalışa geçeceği başlangıç siteleri (İstersen buraya başka siteler de ekleyebilirsin)
+BASLANGIC_SITELERI = [
+    "https://dinihikayeler.com.tr/",
+    "https://www.islamveihsan.com/dini-hikayeler",
+    "https://www.islamidavet.com/kategoriler/hikayeler/"
+]
 
-def akilli_orumcek_calistir():
+def ayni_siteden_linkleri_bul(url, html_icerik):
+    linkler = set()
+    ana_domain = urlparse(url).netloc
+    soup = BeautifulSoup(html_icerik, 'html.parser')
+    
+    for a_tag in soup.find_all("a", href=True):
+        href = a_tag["href"]
+        tam_url = urljoin(url, href)
+        # Sadece aynı site içindeki linklere git (Reklamlara veya başka sitelere gitme)
+        if urlparse(tam_url).netloc == ana_domain:
+            linkler.add(tam_url)
+    return linkler
+
+def link_ziplayan_orumcek():
     if not os.path.exists(ANA_KLASOR):
         os.makedirs(ANA_KLASOR)
 
-    toplam_yeni_kayit = 0
+    dosya_yolu = os.path.join(ANA_KLASOR, "Otomatik_Toplananlar.json")
+    mevcut_veriler = []
+    
+    if os.path.exists(dosya_yolu):
+        try:
+            with open(dosya_yolu, "r", encoding="utf-8") as f:
+                mevcut_veriler = json.load(f)
+        except json.JSONDecodeError:
+            pass
+            
+    ziyaret_edilenler = {h.get('kaynak_url') for h in mevcut_veriler if 'kaynak_url' in h}
+    ziyaret_edilecekler = set(BASLANGIC_SITELERI)
+    
+    # GitHub Action zaman aşımına uğramasın diye her çalışmada max 50 sayfa gezecek.
+    # Her hafta otomatik çalıştığında kaldığı yerden devam edip yeni linkler bulacak.
+    MAX_SAYFA_LIMITI = 50 
+    ziyaret_edilen_sayi = 0
+    yeni_eklenen_sayisi = 0
 
-    for kategori, aramalar in ARAMA_TERIMLERI.items():
-        kategori_dosyasi = os.path.join(ANA_KLASOR, f"{kategori}.json")
-        mevcut_veriler = []
+    print("🕸️ Örümcek Bot sitelere dalıyor...")
+
+    while ziyaret_edilecekler and ziyaret_edilen_sayi < MAX_SAYFA_LIMITI:
+        url = ziyaret_edilecekler.pop() # Listeden bir link al
         
-        # Eski verileri oku ki aynı hikayeyi iki kere eklemeyelim
-        if os.path.exists(kategori_dosyasi):
-            try:
-                with open(kategori_dosyasi, 'r', encoding='utf-8') as f:
-                    mevcut_veriler = json.load(f)
-            except json.JSONDecodeError:
-                pass
+        if url in ziyaret_edilenler:
+            continue
+
+        print(f"[{ziyaret_edilen_sayi+1}/{MAX_SAYFA_LIMITI}] İnceleniyor: {url}")
+        ziyaret_edilenler.add(url)
+        
+        try:
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)'}
+            res = requests.get(url, headers=headers, timeout=10)
+            
+            if res.status_code != 200:
+                continue
                 
-        mevcut_linkler = {h.get('kaynak_url') for h in mevcut_veriler if 'kaynak_url' in h}
-        mevcut_basliklar = {h.get('baslik') for h in mevcut_veriler if 'baslik' in h}
-
-        print(f"\n[{kategori}] kategorisi için internette araştırma yapılıyor...")
-
-        for kelime in aramalar:
-            print(f"Arama Motorunda Aranıyor: '{kelime}'")
-            try:
-                # Yeni ddgs kütüphanesi ile arama yapıyoruz
-                sonuclar = DDGS().text(kelime, region='tr-tr', max_results=30)
-                
-                for sonuc in sonuclar:
-                    url = sonuc.get('href')
-                    baslik = sonuc.get('title')
-
-                    if url in mevcut_linkler or baslik in mevcut_basliklar:
-                        continue
-
-                    print(f"Bağlanılıyor: {url}")
+            # Sayfanın içindeki tüm linkleri bulup "ziyaret_edilecekler" torbasına at
+            yeni_linkler = ayni_siteden_linkleri_bul(url, res.text)
+            for link in yeni_linkler:
+                if link not in ziyaret_edilenler:
+                    ziyaret_edilecekler.add(link)
                     
-                    indirilen_sayfa = trafilatura.fetch_url(url)
-                    if indirilen_sayfa:
-                        icerik = trafilatura.extract(indirilen_sayfa)
-                        
-                        if icerik and len(icerik) > 300:
-                            mevcut_veriler.append({
-                                "baslik": baslik,
-                                "icerik": icerik,
-                                "kaynak_url": url
-                            })
-                            mevcut_linkler.add(url)
-                            toplam_yeni_kayit += 1
-                            print("✅ Başarıyla çekildi ve listeye eklendi.")
-                    
-                    time.sleep(random.uniform(1.5, 3.5))
+            # Sayfanın ana metnini akıllı şekilde çek
+            icerik = trafilatura.extract(res.text)
+            soup_baslik = BeautifulSoup(res.text, 'html.parser')
+            baslik = soup_baslik.title.string.strip() if soup_baslik.title else "Başlıksız"
 
-            except Exception as e:
-                print(f"Hata oluştu: {e}")
-                time.sleep(5)
+            # Eğer metin 500 karakterden uzunsa (yani kategori/menü sayfası değil, gerçek bir hikayeyse)
+            if icerik and len(icerik) > 500:
+                mevcut_veriler.append({
+                    "baslik": baslik,
+                    "icerik": icerik,
+                    "kaynak_url": url
+                })
+                yeni_eklenen_sayisi += 1
+                print(f"✅ HİKAYE BULUNDU: {baslik}")
+            
+            ziyaret_edilen_sayi += 1
+            # Siteler bot olduğumuzu anlamasın diye rastgele bekle
+            time.sleep(random.uniform(1.0, 2.5))
 
-        if mevcut_veriler:
-            with open(kategori_dosyasi, 'w', encoding='utf-8') as f:
-                json.dump(mevcut_veriler, f, ensure_ascii=False, indent=4)
-            print(f"📁 {kategori}.json güncellendi. Toplam hikaye: {len(mevcut_veriler)}")
+        except Exception as e:
+            print(f"Hata oluştu ({url}): {e}")
 
-    print(f"\n🎉 İşlem Tamamlandı! Toplam {toplam_yeni_kayit} adet YENİ hikaye internetten bulunup kaydedildi.")
+    # Toplanan verileri JSON olarak kaydet
+    with open(dosya_yolu, 'w', encoding='utf-8') as f:
+        json.dump(mevcut_veriler, f, ensure_ascii=False, indent=4)
+        
+    print(f"\n🎉 İşlem Tamam! Bu seansta {yeni_eklenen_sayisi} yeni hikaye bulundu.")
+    print(f"📁 Toplam Arşiv Büyüklüğü: {len(mevcut_veriler)} hikaye.")
 
 if __name__ == "__main__":
-    akilli_orumcek_calistir()
+    link_ziplayan_orumcek()
