@@ -1,16 +1,15 @@
 import json
-import random
 import itertools
 from datetime import datetime
 
-# 1. DOĞAL VE İÇTEN GİRİŞLER (Esma-ül Hüsna kalıpları çıkarıldı)
+# 1. DOĞAL VE İÇTEN GİRİŞLER (Eski isimler tamamen kaldırıldı)
 hitaplar = [
     "Allah'ım!", "Rabbim!", "Ya Rabbi!", "Ey Yüce Rabbimiz!", 
     "Yüce Allah'ım!", "Ey merhameti sonsuz olan Rabbim!", 
     "Canım Allah'ım!", "Ey her şeyi yoktan var eden Rabbimiz!"
 ]
 
-# 2. DUALARI ZENGİNLEŞTİREN ŞÜKÜR VE YAKARIŞ CÜMLELERİ (Hepsi birbirine benzemesin diye)
+# 2. ŞÜKÜR VE YAKARIŞ CÜMLELERİ
 ovguler = [
     "Bize verdiğin sayısız nimetler için sana sonsuz şükürler olsun,",
     "Senin rahmetin her şeyi kuşatmıştır,",
@@ -31,7 +30,7 @@ istekler = [
     "kalbimizi iman nuruyla doldur", "hakkı hak bilip ona uymayı bize nasip et", 
     "hanemize huzur, ömrümüze bereket ihsan eyle", "bize helal ve temiz rızıklar kapısı aç", 
     "bedenimize sıhhat, ruhumuza afiyet ver", "bizi rızana ulaştıracak güzel ahlak ile rızıklandır",
-    "ilnimizi, anlayışımızı ve sana olan sevgimizi artır", "bize her işimizde kolaylıklar sağla", 
+    "ilmimizi, anlayışımızı ve sana olan sevgimizi artır", "bize her işimizde kolaylıklar sağla", 
     "ailemizi ve sevdiklerimizi birbirine kenetle", "bize dünyada da ahirette de iyilik ve güzellikler ver", 
     "son nefesimizde kelime-i şehadet getirmeyi nasip eyle", "bizi sana layık bir kul, Peygamberimize layık bir ümmet eyle",
     "göğsümüze inşirah ver ve içimizi ferahlat", "bize şükreden bir kalp ve zikreden bir dil bahşet",
@@ -63,26 +62,19 @@ kapanislar = [
     "Şüphesiz senin her şeye gücün yeter."
 ]
 
-def yuz_bin_dogal_dua_uret():
-    print("Doğal ve içten dualar oluşturuluyor, lütfen bekleyin...")
-    
-    # 1. Tüm olasılıkları hesapla (8 x 12 x 20 x 20 x 9 = 345.600 farklı eşsiz kombinasyon)
+def tum_duallari_uret():
+    # Tüm olasılıkları hesapla (8 x 12 x 20 x 20 x 9 = tam 345.600 dua)
     tum_kombinasyonlar = list(itertools.product(hitaplar, ovguler, istekler, korunmalar, kapanislar))
     
-    # 2. İçinden tam 100.000 tanesini rastgele seç
-    secilen_kombinasyonlar = random.sample(tum_kombinasyonlar, 100000)
-    
-    # 3. Bunları JSON formatına uygun hale getir
     json_verisi = {
         "olusturulma_tarihi": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "toplam_dua_sayisi": len(secilen_kombinasyonlar),
+        "toplam_dua_sayisi": len(tum_kombinasyonlar),
         "dualar": []
     }
     
-    for index, (hitap, ovgu, istek, korunma, kapanis) in enumerate(secilen_kombinasyonlar, start=1):
-        # Cümleleri doğal bir şekilde birleştiriyoruz
+    # 345.600 duanın tamamını JSON listesine ekle
+    for index, (hitap, ovgu, istek, korunma, kapanis) in enumerate(tum_kombinasyonlar, start=1):
         dua_metni = f"{hitap} {ovgu} {istek}, {korunma}. {kapanis}"
-        
         json_verisi["dualar"].append({
             "id": index,
             "dua": dua_metni
@@ -91,12 +83,11 @@ def yuz_bin_dogal_dua_uret():
     return json_verisi
 
 if __name__ == "__main__":
-    # 100 Bin duayı üret
-    dualar_sozlugu = yuz_bin_dogal_dua_uret()
+    dualar_sozlugu = tum_duallari_uret()
     
-    # JSON dosyasına yaz
+    # Eskisini tamamen silip yeni JSON dosyasına yaz
     dosya_adi = "dualar.json"
     with open(dosya_adi, "w", encoding="utf-8") as json_dosyasi:
         json.dump(dualar_sozlugu, json_dosyasi, ensure_ascii=False, indent=4)
         
-    print(f"Başarılı! Tamamen birbirinden farklı, doğal 100.000 dua '{dosya_adi}' dosyasına JSON formatında kaydedildi.")
+    print(f"Başarılı! Eskiler silindi. Toplam {len(dualar_sozlugu['dualar'])} adet doğal dua {dosya_adi} dosyasına kaydedildi.")
