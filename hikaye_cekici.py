@@ -2,7 +2,7 @@ import os
 import json
 import time
 import random
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 import trafilatura
 
 ANA_KLASOR = "Hikayeler_Arsivi"
@@ -49,25 +49,22 @@ def akilli_orumcek_calistir():
         for kelime in aramalar:
             print(f"Arama Motorunda Aranıyor: '{kelime}'")
             try:
-                # DuckDuckGo'dan her arama için 30 farklı web sitesi bul
+                # Yeni ddgs kütüphanesi ile arama yapıyoruz
                 sonuclar = DDGS().text(kelime, region='tr-tr', max_results=30)
                 
                 for sonuc in sonuclar:
                     url = sonuc.get('href')
                     baslik = sonuc.get('title')
 
-                    # Eğer bu siteyi daha önce kaydettiysek atla
                     if url in mevcut_linkler or baslik in mevcut_basliklar:
                         continue
 
                     print(f"Bağlanılıyor: {url}")
                     
-                    # Siteye gir ve metni akıllı bir şekilde (HTML sormadan) çek
                     indirilen_sayfa = trafilatura.fetch_url(url)
                     if indirilen_sayfa:
                         icerik = trafilatura.extract(indirilen_sayfa)
                         
-                        # Eğer geçerli bir metin bulduysa ve çok kısa değilse (menü vs. değilse) kaydet
                         if icerik and len(icerik) > 300:
                             mevcut_veriler.append({
                                 "baslik": baslik,
@@ -78,14 +75,12 @@ def akilli_orumcek_calistir():
                             toplam_yeni_kayit += 1
                             print("✅ Başarıyla çekildi ve listeye eklendi.")
                     
-                    # Arama motorundan ban yememek için aralarda biraz bekle
                     time.sleep(random.uniform(1.5, 3.5))
 
             except Exception as e:
                 print(f"Hata oluştu: {e}")
-                time.sleep(5) # Hata olursa 5 saniye bekle, devam et
+                time.sleep(5)
 
-        # Bulunan tüm yeni verileri JSON olarak kaydet
         if mevcut_veriler:
             with open(kategori_dosyasi, 'w', encoding='utf-8') as f:
                 json.dump(mevcut_veriler, f, ensure_ascii=False, indent=4)
