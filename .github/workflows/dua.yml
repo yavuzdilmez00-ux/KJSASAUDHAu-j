@@ -1,4 +1,4 @@
-name: Otomatik Dua Jeneratörü (Ücretsiz Sürüm)
+name: Otomatik Dua Jeneratörü (Saf ve Ücretsiz)
 
 on:
   schedule:
@@ -20,10 +20,8 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Gerekli Kütüphaneleri Yükle
-        run: |
-          pip install g4f curl_cffi nest_asyncio aiohttp
-
+      # Dış kütüphane kurulum adımı (pip install) tamamen kaldırıldı!
+      
       - name: Dua Üreticiyi Çalıştır
         run: python dua_generator.py
 
