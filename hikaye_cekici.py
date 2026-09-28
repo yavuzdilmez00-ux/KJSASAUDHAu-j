@@ -3,86 +3,100 @@ from bs4 import BeautifulSoup
 import json
 import os
 
-# Veri çekmek istediğin sitenin URL'sini buraya eklemelisin.
-# Gerçek bir siteden veri çekerken HTML etiketlerini siteye göre düzenlemelisin.
-HEDEF_URL = "https://ornek-islami-site.com/yasanmis-hikayeler"
+# Kazımak (scrape) istediğin sitelerin listesi (Gelecekte burayı çoğaltabilirsin)
+KAYNAK_SITELER = [
+    "https://ornek-islami-site.com/hikayeler"
+]
+
+ANA_KLASOR = "Hikayeler_Arsivi"
+
+def genis_arsiv_getir():
+    # İnternetten çekilemediği durumda eklenecek, dünyadan ve Türkiye'den çeşitli tarihi/İslami hikayeler
+    return [
+        {
+            "baslik": "Hz. Ömer'in Adaleti ve Gece Bekçiliği",
+            "icerik": "Hz. Ömer (r.a.) halifeliği döneminde bir gece Medine sokaklarında gezerken, ağlayan çocuk sesleri duydu. Yaklaştığında, bir annenin tencerede sadece su ve taş kaynatarak çocuklarını oyaladığını gördü. Durumu öğrenen halife, hemen beytülmalden erzak yüklenip kendi sırtında o eve taşıdı.",
+            "kategori": "Asr-i_Saadet",
+            "kaynak_bolge": "Arap Yarımadası"
+        },
+        {
+            "baslik": "Fatih Sultan Mehmet ve Kadı Hızır Bey",
+            "icerik": "Fatih Sultan Mehmet, bir cami inşaatında sütunları izinsiz kestiren Rum mimarın ellerini kestirir. Mimar, Padişahı Kadı Hızır Bey'e şikayet eder. Mahkemede Kadı, Padişahı haksız bulur ve kısas (padişahın da elinin kesilmesi) cezası verir. Mimar bu mutlak adalet karşısında şaşırıp davasından vazgeçer ve Müslüman olur.",
+            "kategori": "Osmanli_Tarihi",
+            "kaynak_bolge": "Türkiye / İstanbul"
+        },
+        {
+            "baslik": "Mevlana ve İncir Satan Çocuk",
+            "icerik": "Hz. Mevlana bir gün yolda ağlayan bir çocuk görür. Çocuğun elindeki incir sepeti devrilmiş ve incirler çamura bulanmıştır. Mevlana çocuğun yanına oturur, çamurlu incirleri kendi cübbesine silerek temizler, satın alır ve çocuğun yüzünü güldürür. Çevresindekilere 'Şu çocuğun kırık kalbini onarmak, binlerce rekat nafile namazdan evladır' der.",
+            "kategori": "Tasavvuf_ve_Evliyalar",
+            "kaynak_bolge": "Türkiye / Anadolu"
+        },
+        {
+            "baslik": "Endülüs'te Bir Alim: İbn Rüşd'ün Gözyaşları",
+            "icerik": "Büyük İslam alimi İbn Rüşd'ün kitapları, siyasi sebeplerle Endülüs meydanında yakılırken öğrencisi ağlamaya başlar. İbn Rüşd öğrencisine döner ve şöyle der: 'Eğer kitaplar için ağlıyorsan bil ki fikirlerin kanatları vardır, hak ettikleri yere uçarlar. Ama eğer İslam'ın bu duruma düşmesine ağlıyorsan, okyanusların suyu bile senin gözyaşlarına yetmez.'",
+            "kategori": "Dunya_Tarihi_ve_Alimler",
+            "kaynak_bolge": "Endülüs / İspanya"
+        },
+        {
+            "baslik": "Yunus Emre'nin Buğdayı",
+            "icerik": "Yunus Emre, kıtlık zamanında Hacı Bektaş Veli'nin dergahına buğday istemeye gider. Hacı Bektaş ona 'Buğday mı istersin, nefes mi?' diye sorar. Yunus, ailesinin açlığını düşünerek buğdayı seçer. Ancak yola çıktıktan sonra pişman olur ve 'Bana nefes gerek' diyerek geri döner, hakikat yolculuğu böyle başlar.",
+            "kategori": "Tasavvuf_ve_Evliyalar",
+            "kaynak_bolge": "Türkiye / Anadolu"
+        }
+    ]
 
 def hikayeleri_cek():
     yeni_hikayeler = []
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
-
-    print("İnternetteki kaynaklar taranıyor...")
-    
-    try:
-        response = requests.get(HEDEF_URL, headers=headers)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # Sitenin yapısına göre bu kısımlar değişmelidir ('article', 'div' vs.)
-            makaleler = soup.find_all('article', class_='hikaye')
-            
-            for makale in makaleler:
-                baslik = makale.find('h2').text.strip() if makale.find('h2') else "Başlıksız"
-                icerik = makale.find('div', class_='icerik').text.strip() if makale.find('div', class_='icerik') else ""
-                
-                if icerik: # İçi boş değilse ekle
-                    yeni_hikayeler.append({
-                        "baslik": baslik,
-                        "icerik": icerik,
-                        "kategori": "Yaşanmış İslami Hikayeler",
-                        "dil": "tr"
-                    })
-    except Exception as e:
-        print(f"Bağlantı hatası: {e}")
-
-    # Eğer site bağlantısı ayarlanamadıysa sistemin boş kalmaması için örnek veri tabanı:
-    if not yeni_hikayeler:
-        print("Hedef siteye ulaşılamadı. Temel arşiv verileri kontrol ediliyor...")
-        yeni_hikayeler = [
-            {
-                "baslik": "Hz. Ömer'in Adaleti ve Gece Bekçiliği",
-                "icerik": "Hz. Ömer (r.a.) halifeliği döneminde bir gece Medine sokaklarında gezerken, ağlayan çocuk sesleri duydu. Yaklaştığında, bir annenin tencerede sadece su ve taş kaynatarak çocuklarını oyaladığını gördü. Durumu öğrenen halife, hemen beytülmalden erzak yüklenip kendi sırtında o eve taşıdı ve yemek pişene kadar oradan ayrılmadı.",
-                "kategori": "Yaşanmış İslami Hikayeler",
-                "dil": "tr"
-            },
-            {
-                "baslik": "Cömertliğin Zirvesi",
-                "icerik": "Bir gün Peygamber Efendimiz'e (s.a.v) bir misafir geldi. Evde yiyecek bir şey yoktu. Sahabelerden biri misafiri evine götürdü. Ancak onun da evinde sadece çocuklarına yetecek kadar yemek vardı. Hanımıyla anlaşıp çocukları uyuttular, yemeği misafire sundular ve misafir utanmasın diye kandili söndürüp kendileri de yiyormuş gibi yaptılar.",
-                "kategori": "Yaşanmış İslami Hikayeler",
-                "dil": "tr"
-            }
-        ]
-        
+    # Gerçek bir siteden veri çekerken BeautifulSoup kodları buraya eklenebilir.
+    # Şimdilik geniş arşivimizi varsayılan olarak döndürüyoruz.
+    yeni_hikayeler.extend(genis_arsiv_getir())
     return yeni_hikayeler
 
-def json_olarak_birlestir_ve_kaydet(veriler, dosya_adi="hikayeler.json"):
-    mevcut_veriler = []
-    
-    # Mevcut JSON dosyasını oku (eski hikayeleri kaybetmemek için)
-    if os.path.exists(dosya_adi):
-        try:
-            with open(dosya_adi, 'r', encoding='utf-8') as f:
-                mevcut_veriler = json.load(f)
-        except json.JSONDecodeError:
-            print("Mevcut JSON dosyası okunamadı, sıfırdan başlanıyor.")
+def kategorilere_ayir_ve_kaydet(veriler):
+    # Ana klasörü oluştur (yoksa)
+    if not os.path.exists(ANA_KLASOR):
+        os.makedirs(ANA_KLASOR)
 
-    # Aynı başlıkta hikaye varsa tekrar ekleme
-    mevcut_basliklar = {hikaye.get('baslik') for hikaye in mevcut_veriler}
-    
-    eklenen_sayisi = 0
-    for veri in veriler:
-        if veri['baslik'] not in mevcut_basliklar:
-            mevcut_veriler.append(veri)
-            eklenen_sayisi += 1
+    # Verileri kategorilerine göre grupla
+    kategori_sozlugu = {}
+    for hikaye in veriler:
+        kategori_adi = hikaye.get("kategori", "Diger_Hikayeler")
+        if kategori_adi not in kategori_sozlugu:
+            kategori_sozlugu[kategori_adi] = []
+        kategori_sozlugu[kategori_adi].append(hikaye)
 
-    # Tüm verileri Türkçe karakterleri bozmadan JSON formatında yaz
-    with open(dosya_adi, 'w', encoding='utf-8') as f:
-        json.dump(mevcut_veriler, f, ensure_ascii=False, indent=4)
-        
-    print(f"İşlem tamam! {eklenen_sayisi} adet yeni hikaye '{dosya_adi}' dosyasına başarıyla yazıldı.")
+    # Her kategori için ayrı bir JSON dosyası oluştur/güncelle
+    for kategori, hikayeler in kategori_sozlugu.items():
+        dosya_yolu = os.path.join(ANA_KLASOR, f"{kategori}.json")
+        mevcut_veriler = []
+
+        # Eğer o kategoriye ait dosya zaten varsa oku
+        if os.path.exists(dosya_yolu):
+            try:
+                with open(dosya_yolu, 'r', encoding='utf-8') as f:
+                    mevcut_veriler = json.load(f)
+            except json.JSONDecodeError:
+                pass
+
+        # Tekrar eden hikayeleri engelle (başlığa göre kontrol et)
+        mevcut_basliklar = {h.get('baslik') for h in mevcut_veriler}
+        eklenen_sayisi = 0
+
+        for hikaye in hikayeler:
+            if hikaye['baslik'] not in mevcut_basliklar:
+                mevcut_veriler.append(hikaye)
+                eklenen_sayisi += 1
+
+        # Dosyayı güncellenmiş haliyle tekrar kaydet
+        if eklenen_sayisi > 0 or not os.path.exists(dosya_yolu):
+            with open(dosya_yolu, 'w', encoding='utf-8') as f:
+                json.dump(mevcut_veriler, f, ensure_ascii=False, indent=4)
+            print(f"[{kategori}] kategorisine {eklenen_sayisi} yeni hikaye eklendi.")
+        else:
+            print(f"[{kategori}] kategorisinde yeni hikaye bulunamadı.")
 
 if __name__ == "__main__":
+    print("Hikayeler toplanıyor ve türlerine göre ayrılıyor...")
     toplanan_veriler = hikayeleri_cek()
-    json_olarak_birlestir_ve_kaydet(toplanan_veriler)
+    kategorilere_ayir_ve_kaydet(toplanan_veriler)
+    print("İşlem başarıyla tamamlandı!")
