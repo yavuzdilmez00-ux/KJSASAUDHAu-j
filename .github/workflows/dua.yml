@@ -22,7 +22,7 @@ jobs:
 
       - name: Gerekli Kütüphaneleri Yükle
         run: |
-          pip install duckduckgo-search
+          pip install g4f curl_cffi nest_asyncio aiohttp
 
       - name: Dua Üreticiyi Çalıştır
         run: python dua_generator.py
