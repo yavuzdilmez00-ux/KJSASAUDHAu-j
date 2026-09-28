@@ -2,11 +2,11 @@ name: Otomatik Dua Jeneratörü (Ücretsiz Sürüm)
 
 on:
   schedule:
-    - cron: '0 */4 * * *' # Her 4 saatte bir otomatik çalışır
-  workflow_dispatch: # GitHub üzerinden manuel tetikleme butonu
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
 
 permissions:
-  contents: write # Repoya dosya yazdırma izni
+  contents: write
 
 jobs:
   generate-and-save:
@@ -18,7 +18,7 @@ jobs:
       - name: Python 3.11 Kurulumu
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # Sürüm hatasını gidermek için 3.11'e yükseltildi
+          python-version: '3.11'
 
       - name: Gerekli Kütüphaneleri Yükle
         run: |
@@ -31,6 +31,6 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add dualar.json
+          git add .
           git commit -m "🤖 Otomatik Dua Eklemesi: Veritabanı güncellendi" || echo "Değişiklik yok"
           git push
