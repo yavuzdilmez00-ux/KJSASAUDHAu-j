@@ -9,10 +9,10 @@ data class StoryCategory(
 object ReligiousStoriesNewArchive {
     val categories = listOf(
         StoryCategory(
-            name = "Asr-ı Saadet'ten İnciler",
-            description = "Peygamber Efendimiz (sav) ve ashabının hayatı.",
+            name = "Anadolu Erenleri ve Osmanlı",
+            description = "Cihan devletinin manevi mimarları.",
             stories = listOf(
-                ReligiousStory("Hicret ve Mağara", "Örümcek ağ ördü...", "Allah'ın görünmez orduları vardır.")
+                ReligiousStory("Fatih ve Kadı", "Kadı, padişaha kısas verdi...", "İslam'da adalet mülkün temelidir.")
             )
         ),
         StoryCategory(
@@ -23,10 +23,10 @@ object ReligiousStoriesNewArchive {
             )
         ),
         StoryCategory(
-            name = "Anadolu Erenleri ve Osmanlı",
-            description = "Cihan devletinin manevi mimarları.",
+            name = "Asr-ı Saadet'ten İnciler",
+            description = "Peygamber Efendimiz (sav) ve ashabının hayatı.",
             stories = listOf(
-                ReligiousStory("Fatih ve Kadı", "Kadı, padişaha kısas verdi...", "İslam'da adalet mülkün temelidir.")
+                ReligiousStory("Hicret ve Mağara", "Örümcek ağ ördü...", "Allah'ın görünmez orduları vardır.")
             )
         )
     )
